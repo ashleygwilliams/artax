@@ -1,3 +1,7 @@
+const Promise = require('bluebird')
+const redis = require('redis')
+Promise.promisifyAll(redis.RedisClient.prototype)
+
 module.exports = tarpit
 
 function tarpit (opts) {
@@ -41,20 +45,19 @@ function countDoesntExist (record) {
 }
 
 function pit (key, name, max, cb) {
-  const redis = require('redis')
   const client = redis.createClient(process.env.LOGIN_CACHE_REDIS || 'redis://127.0.0.1:6379')
 
   const id = 'tarpit:' + name + ':' + key
-  client.get(id, function (err, reply) {
-    if (err) throw new Error('There was an error fetching from redis. Error: ' + err)
+  client.getAsync(id).then(function (reply) {
+    const record = json(reply) || {}
+    if (record.err) throw new Error('There was an error fetching from redis. Error: ' + record.err)
     console.log('tarpit got', id)
 
-    const record = json(reply) || {}
     const count = (record.count || 0) + 1
 
     const data = JSON.stringify({time: Date.now(), count: count})
-    client.setex(id, max / 1000, data, function (err) {
-      cb(err, record)
+    client.setexAsync(id, max / 1000, data).then(function (reply) {
+      cb(reply.err, record)
     })
   })
 }
