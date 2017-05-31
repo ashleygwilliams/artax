@@ -1,3 +1,5 @@
+const logger = require('bole')('tarpit')
+
 module.exports = tarpit
 
 function tarpit (opts) {
@@ -16,6 +18,7 @@ function tarpit (opts) {
       var delay = calculateDelay(wait, record.count)
       if (delay > max) delay = max
 
+      if (delay > 100) logger.warn(`key ${key} is now delayed for ${delay}`)
       tar(err, delay, target)
     })
   }
