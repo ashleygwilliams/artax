@@ -12,8 +12,16 @@ function tarpit (opts) {
       const now = Date.now()
       record.time = record.time || 0
 
+      if (maxDoesntExist(record)) record.max = max
       if (countDoesntExist(record)) record.count = 0
-      if (shouldEscape(record, now, max)) record.count = 0
+      if (escapesDoesntExist(record)) record.escapes = 0
+
+      if (shouldEscape(record, now, max)) {
+        record.count = 0
+        record.escapes += 1
+      }
+
+      if (repeatVisitor) record.max = record.max * record.escapes
 
       var delay = calculateDelay(wait, record.count)
       if (delay > max) delay = max
@@ -41,6 +49,17 @@ function shouldEscape (record, now, max) {
 
 function countDoesntExist (record) {
   return !record.count || isNaN(record.count)
+}
+
+function escapesDoesntExist (record) {
+  return !record.escapes || isNaN(record.escapes)
+}
+
+function maxDoesntExist (record) {
+  return !record.max || isNaN(record.max)
+}
+function repeatVisitor (record) {
+  return record.escapes > 1
 }
 
 function pit (key, name, max, cb) {
