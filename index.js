@@ -27,7 +27,7 @@ function tarpit (opts) {
       if (delay > max) delay = max
 
       if (delay > 100) logger.warn(`key ${key} is now delayed for ${delay}`)
-      tar(err, delay, target)
+      return tar(err, delay, target)
     })
   }
 }
