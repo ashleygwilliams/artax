@@ -1,6 +1,8 @@
 # artax
 > exponentially stall a functional call based on frequency of a keyed request to call
 
+[![Build Status](https://travis-ci.org/ashleygwilliams/artax.svg?branch=master)](https://travis-ci.org/ashleygwilliams/artax)
+
 ![artax](artax.gif)
 
 `artax` is a package that allows you to exponentially stall responses based on the frequency of a keyed
