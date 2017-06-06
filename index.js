@@ -2,7 +2,7 @@ const logger = require('bole')('tarpit')
 
 module.exports = tarpit
 
-function tarpit (opts) {
+function tarpit (opts = {}) {
   const wait = opts.wait || 10
   const max = opts.max || 10000
   const name = opts.name || ''
