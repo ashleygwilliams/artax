@@ -1,4 +1,5 @@
 const logger = require('bole')('tarpit')
+const Promise = require('bluebird')
 
 module.exports = tarpit
 
@@ -8,7 +9,12 @@ function tarpit (opts = {}) {
   const name = opts.name || ''
 
   return function (key, target) {
-    pit(key, name, max, function (err, record) {
+    const keys = [].concat(key)
+    const getRecords = Promise.all(keys.map(key => pit(key, name, max)))
+
+    return getRecords.then(records => {
+      const record = getHighestCount(records)
+
       const now = Date.now()
       record.time = record.time || 0
 
@@ -27,9 +33,16 @@ function tarpit (opts = {}) {
       if (delay > max) delay = max
 
       if (delay > 100) logger.warn(`key ${key} is now delayed for ${delay}`)
-      return tar(err, delay, target)
+      return tar(null, delay, target)
+    })
+    .catch(err => {
+      return tar(err, 0, target)
     })
   }
+}
+
+function getHighestCount (records) {
+  return Array.from(records).sort((a, b) => a.count < b.count)[0]
 }
 
 function tar (err, delay, target) {
@@ -62,22 +75,27 @@ function repeatVisitor (record) {
   return record.escapes > 1
 }
 
-function pit (key, name, max, cb) {
+function pit (key, name, max) {
   const redis = require('redis')
   const client = redis.createClient(process.env.LOGIN_CACHE_REDIS || 'redis://127.0.0.1:6379')
 
-  const id = 'tarpit:' + name + ':' + key
-  client.get(id, function (err, reply) {
-    if (err) throw new Error('There was an error fetching from redis. Error: ' + err)
-    console.log('tarpit got', id)
+  const id = `tarpit: ${name}:${key}`
 
-    const record = json(reply) || {}
-    const count = (record.count || 0) + 1
+  return new Promise((resolve, reject) => {
+    client.get(id, function (err, reply) {
+      if (err) return reject(new Error(`There was an error fetching from redis. Error: ${err}`))
 
-    const data = JSON.stringify({time: Date.now(), count: count})
-    client.setex(id, max / 1000, data, function (err) {
-      client.unref()
-      cb(err, record)
+      console.log('tarpit got', id)
+
+      const record = json(reply) || {}
+      const count = (record.count || 0) + 1
+
+      const data = JSON.stringify({time: Date.now(), count: count})
+      client.setex(id, max / 1000, data, function (err) {
+        if (err) return reject(err)
+        client.unref()
+        return resolve(record)
+      })
     })
   })
 }
