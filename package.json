@@ -15,7 +15,8 @@
   "dependencies": {
     "bluebird": "^3.5.0",
     "bole": "^3.0.2",
-    "redis": "^2.7.1"
+    "redis": "^2.7.1",
+    "tap": "^10.3.2"
   },
   "devDependencies": {
     "standard": "^10.0.2",
