@@ -34,6 +34,9 @@ function tarpit (opts = {}) {
       const id = `${name}:${record.key}`
       return updateRecord(client, id, record).then(record => {
         var delay = calculateDelay(wait, record)
+        if (record.count > 3) {
+          process.emit('metric', { name: 'tarpit', value: delay, identifier: key })
+        }
         console.log(`key ${record.key} is now delayed for ${delay}`)
         if (delay > 100) logger.warn(`key ${record.key} is now delayed for ${delay}`)
         client.unref()
@@ -106,6 +109,7 @@ function pit (client, key, name, max) {
       const record = json(reply) || {}
 
       record.count = (record.count || 0) + 1
+
       record.time = Date.now()
       record.key = key
 
